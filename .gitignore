@@ -15,3 +15,7 @@ env/
 
 # Scratch & Logs
 *.log
+git.cmd
+git.bat
+git.ps1
+
