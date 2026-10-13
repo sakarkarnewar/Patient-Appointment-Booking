@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Digital Appointment Pass - {{ appointment.booking_ref }} | Nexus Health{% endblock %}
+
+{% block content %}
+<div class="pass-container">
+
+  <!-- Success Notification Header -->
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <div style="width: 56px; height: 56px; background: #ecfdf5; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: var(--shadow-sm); border: 2px solid #a7f3d0;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--slate-900);">Appointment Confirmed!</h1>
+    <p style="color: var(--slate-500); font-size: 0.95rem; margin-top: 0.25rem;">
+      Your digital appointment pass has been issued. Save or present this pass upon arrival.
+    </p>
+  </div>
+
+  <!-- Boarding Pass Card -->
+  <div class="digital-pass">
+    
+    <!-- Pass Header -->
+    <div class="pass-header">
+      <div>
+        <div class="pass-brand">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M2 12h20"></path>
+          </svg>
+          <span>Nexus Health</span>
+        </div>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Official Clinic Appointment Pass</p>
+      </div>
+
+      <div style="text-align: right;">
+        <span class="pass-ref-tag">{{ appointment.booking_ref }}</span>
+        <div style="margin-top: 6px;">
+          <span class="badge badge-{{ appointment.status.lower() }}">{{ appointment.status }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pass Body -->
+    <div class="pass-body">
+      
+      <!-- Patient & Doctor Info Grid -->
+      <div class="pass-grid-info">
+        <div>
+          <div class="pass-field-label">Patient Name</div>
+          <div class="pass-field-val">{{ appointment.patient_name }}</div>
+          <div class="pass-field-sub">{{ appointment.patient_phone }}</div>
+        </div>
+
+        <div>
+          <div class="pass-field-label">Assigned Specialist</div>
+          <div class="pass-field-val" style="color: var(--primary);">{{ appointment.doctor_name }}</div>
+          <div class="pass-field-sub">{{ appointment.specialty }} ({{ appointment.qualification }})</div>
+        </div>
+
+        <div>
+          <div class="pass-field-label">Appointment Date & Time</div>
+          <div class="pass-field-val">{{ appointment.appointment_date }}</div>
+          <div class="pass-field-sub" style="font-weight: 700; color: var(--slate-800);">{{ appointment.time_slot }}</div>
+        </div>
+
+        <div>
+          <div class="pass-field-label">Clinic Location / Room</div>
+          <div class="pass-field-val">{{ appointment.room_number }}</div>
+          <div class="pass-field-sub">Consultation Fee: ${{ appointment.consultation_fee }}</div>
+        </div>
+      </div>
+
+      <!-- Triage & Clinical Urgency Note -->
+      <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500);">Smart Triage Status</span>
+          <span class="badge {{ appointment.triage_badge }}">{{ appointment.triage_level }}</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--slate-700); margin: 0;">
+          {{ appointment.triage_notes or 'Standard consultation protocol.' }}
+        </p>
+        {% if appointment.symptoms %}
+        <div style="margin-top: 0.5rem; font-size: 0.82rem; color: var(--slate-500);">
+          <strong>Reported symptoms:</strong> {{ appointment.symptoms }}
+        </div>
+        {% endif %}
+      </div>
+
+
+    </div>
+
+  </div>
+
+  <!-- Actions Bar -->
+  <div class="pass-actions-bar">
+    <a href="{{ url_for('download_ics', booking_ref=appointment.booking_ref) }}" class="btn btn-outline" style="flex: 1;" id="downloadIcsBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      Add to Calendar (.ics)
+    </a>
+
+    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="window.print()" id="printPassBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      Print Pass
+    </button>
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary" style="flex: 1;" id="bookAnotherBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Book Another
+    </a>
+  </div>
+
+  <!-- Cancel Option if Confirmed -->
+  {% if appointment.status == 'Confirmed' %}
+  <div style="text-align: center; margin-top: 1.5rem;">
+    <form action="{{ url_for('cancel_appointment', app_id=appointment.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this appointment?');" style="display: inline;">
+      <button type="submit" class="btn btn-danger-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+        Need to cancel this appointment? Click here
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Book Doctor Appointment | Nexus Health{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-header">
+  <div class="hero-pill">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+    Instant Digital Booking & Smart Triage
+  </div>
+  <h1 class="hero-title">Patient Appointment System</h1>
+  <p class="hero-subtitle">
+    Schedule your consultation with top specialists in seconds. Enjoy real-time slot availability, smart symptom-based triage recommendations, and an instant digital clinic pass.
+  </p>
+</section>
+
+<!-- Form & Sidebar Grid -->
+<form id="bookingForm" action="{{ url_for('book_appointment') }}" method="POST">
+  <div class="booking-grid">
+    
+    <!-- LEFT COLUMN: BOOKING STEPS -->
+    <div class="booking-main-col">
+      
+      <!-- STEP 1: CHOOSE DOCTOR -->
+      <div class="card" id="step1Card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-styled">
+          <div class="card-title-group">
+            <span class="step-indicator">1</span>
+            <h2 class="card-title">Select Your Doctor & Specialty</h2>
+          </div>
+          <span style="font-size: 0.82rem; color: var(--slate-400);">Choose 1 specialist</span>
+        </div>
+
+        <div class="doctor-options">
+          {% for doc in doctors %}
+          <label class="doctor-card-radio" id="doctorCard{{ doc.id }}">
+            <input type="radio" name="doctor_id" value="{{ doc.id }}" {% if loop.first %}checked{% endif %} data-name="{{ doc.name }}" data-specialty="{{ doc.specialty }}" data-fee="${{ doc.consultation_fee }}" data-room="{{ doc.room_number }}">
+            <div class="doctor-card-inner">
+              <div class="doctor-header-row">
+                <div class="doctor-avatar" style="background-color: {{ doc.avatar_color }};">
+                  {{ doc.name.split(' ')[1][0] }}
+                </div>
+                <div>
+                  <div class="doctor-name">{{ doc.name }}</div>
+                  <div class="doctor-spec">{{ doc.specialty }}</div>
+                </div>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 0.75rem; flex-grow: 1;">
+                {{ doc.bio }}
+              </p>
+              <div class="doctor-meta-sub">
+                <span>{{ doc.room_number }}</span>
+                <span style="font-weight: 700; color: var(--slate-900);">${{ doc.consultation_fee }}</span>
+              </div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- STEP 2: CHOOSE DATE & TIME -->
+      <div class="card" id="step2Card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-styled">
+          <div class="card-title-group">
+            <span class="step-indicator">2</span>
+            <h2 class="card-title">Choose Date & Available Time Slot</h2>
+          </div>
+          <span style="font-size: 0.82rem; color: var(--emerald); font-weight: 600;">● Real-time availability</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="appointment_date">Appointment Date <span class="req">*</span></label>
+          <input type="date" id="appointment_date" name="appointment_date" class="form-control" value="{{ min_date }}" min="{{ min_date }}" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem;">
+            <label class="form-label" style="margin-bottom: 0;">Available Time Slots <span class="req">*</span></label>
+            <span style="font-size: 0.82rem; color: var(--slate-500);">Selected: <strong id="selectedSlotText" style="color: var(--primary);">None selected</strong></span>
+          </div>
+          <input type="hidden" name="time_slot" id="timeSlotInput" required>
+          <div class="slots-container" id="slotsContainer">
+            <!-- Dynamically populated via JS -->
+            {% for slot in slots %}
+            <button type="button" class="slot-btn" data-slot="{{ slot }}">{{ slot }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: PATIENT INFORMATION -->
+      <div class="card" id="step3Card">
+        <div class="card-header-styled">
+          <div class="card-title-group">
+            <span class="step-indicator">3</span>
+            <h2 class="card-title">Patient Details & Symptoms</h2>
+          </div>
+          <span style="font-size: 0.82rem; color: var(--slate-400);">Confidential Record</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="patient_name">Full Patient Name <span class="req">*</span></label>
+            <input type="text" id="patient_name" name="patient_name" class="form-control" placeholder="e.g. Johnathan Doe" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="patient_phone">Phone Number <span class="req">*</span></label>
+            <input type="tel" id="patient_phone" name="patient_phone" class="form-control" placeholder="e.g. (555) 392-8192" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="patient_email">Email Address <span class="req">*</span></label>
+          <input type="email" id="patient_email" name="patient_email" class="form-control" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem;">
+            <label class="form-label" for="symptoms" style="margin-bottom: 0;">Symptoms / Reason for Visit</label>
+            <span style="font-size: 0.78rem; color: var(--teal); font-weight: 600;">✨ Powers Smart Triage</span>
+          </div>
+          <textarea id="symptoms" name="symptoms" class="form-control" placeholder="Describe symptoms (e.g. high fever for 2 days, persistent joint ache, dry cough)..."></textarea>
+          
+          <div style="margin-top: 0.75rem;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase;">Quick Symptom Tags:</span>
+            <div class="symptom-chips-wrap">
+              <span class="symptom-chip" data-symptom="Severe chest tightness and rapid pulse">Chest Discomfort</span>
+              <span class="symptom-chip" data-symptom="Persistent fever and sore throat">Fever & Flu</span>
+              <span class="symptom-chip" data-symptom="Skin rash and allergic itching">Skin Rash & Itch</span>
+              <span class="symptom-chip" data-symptom="Sharp knee and lower back pain">Joint / Back Pain</span>
+              <span class="symptom-chip" data-symptom="Intense migraine and light dizziness">Migraine & Dizziness</span>
+              <span class="symptom-chip" data-symptom="Routine child health checkup and vaccine">Child Checkup</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: CREATIVE FEATURE & SUMMARY -->
+    <div class="booking-sidebar">
+      
+      <!-- CREATIVE FEATURE: SMART TRIAGE CARD -->
+      <div class="card triage-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="triage-badge-pill">Creative Feature</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </div>
+
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 0.4rem;">
+          Smart Clinical Triage
+        </h3>
+        <p style="font-size: 0.83rem; color: var(--slate-600); line-height: 1.45;">
+          Our symptom analysis engine evaluates your clinical notes in real time, determines urgency level, and matches you with the ideal specialist.
+        </p>
+
+        <!-- Live Triage Dynamic Result -->
+        <div class="triage-suggestion-box" id="triageSuggestionBox">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500);">Assessment</span>
+            <span id="triageBadge" class="badge badge-routine">Routine</span>
+          </div>
+
+          <div style="margin-bottom: 0.5rem;">
+            <div style="font-size: 0.8rem; color: var(--slate-500);">Recommended Specialist:</div>
+            <strong id="triageSpecialty" style="color: var(--teal); font-size: 1rem;">General Physician</strong>
+            <div id="triageDoctorName" style="font-size: 0.82rem; font-weight: 600; color: var(--slate-700);">Dr. Sarah Jenkins</div>
+          </div>
+
+          <p id="triageNotes" style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 0.85rem; line-height: 1.4;">
+            Symptoms suggest primary care evaluation.
+          </p>
+
+          <button type="button" id="triageAutoSelectBtn" class="btn btn-outline btn-block" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; border-color: #0d9488; color: #0d9488;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Auto-Select This Doctor
+          </button>
+        </div>
+
+      </div>
+
+      <!-- BOOKING CONFIRMATION SUMMARY CARD -->
+      <div class="card" style="position: sticky; top: 5.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+          Booking Summary
+        </h3>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem; font-size: 0.88rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--slate-500);">Doctor:</span>
+            <strong id="summaryDocName" style="color: var(--slate-900);">Dr. Sarah Jenkins</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--slate-500);">Specialty:</span>
+            <span id="summaryDocSpec" style="color: var(--primary); font-weight: 600;">General Physician</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--slate-500);">Location:</span>
+            <span id="summaryDocRoom" style="color: var(--slate-700);">Suite 102</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--slate-200); padding-top: 0.75rem;">
+            <span style="color: var(--slate-500);">Consultation Fee:</span>
+            <strong id="summaryFee" style="color: var(--emerald); font-size: 1.15rem;">$60</strong>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="confirmBookingBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Confirm & Get Digital Pass
+        </button>
+
+        <p style="text-align: center; font-size: 0.75rem; color: var(--slate-400); margin-top: 0.85rem;">
+          Instant confirmation with verified QR boarding pass.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Sync summary box with selected doctor
+  function updateSummaryCard() {
+    const selectedDoc = document.querySelector('input[name="doctor_id"]:checked');
+    if (!selectedDoc) return;
+    
+    document.getElementById('summaryDocName').textContent = selectedDoc.getAttribute('data-name');
+    document.getElementById('summaryDocSpec').textContent = selectedDoc.getAttribute('data-specialty');
+    document.getElementById('summaryDocRoom').textContent = selectedDoc.getAttribute('data-room');
+    document.getElementById('summaryFee').textContent = selectedDoc.getAttribute('data-fee');
+  }
+
+  document.querySelectorAll('input[name="doctor_id"]').forEach(r => {
+    r.addEventListener('change', updateSummaryCard);
+  });
+  updateSummaryCard();
+</script>
+{% endblock %}

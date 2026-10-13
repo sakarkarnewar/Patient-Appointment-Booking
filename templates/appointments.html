@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}All Appointments | Nexus Health Desk{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--slate-900);">Patient Appointments Directory</h1>
+      <p style="font-size: 0.88rem; color: var(--slate-500); margin-top: 2px;">
+        Track scheduled visits, triage urgency statuses, and manage check-ins.
+      </p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-primary" id="btnNewAppointment">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Book New Appointment
+    </a>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <form method="GET" action="{{ url_for('list_appointments') }}" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
+    <div style="flex: 1; min-width: 240px;">
+      <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search by patient name, reference code, or phone...">
+    </div>
+    
+    <div style="width: 170px;">
+      <select name="status" class="form-control" onchange="this.form.submit()">
+        <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+        <option value="Confirmed" {% if status_filter == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+        <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+        <option value="Cancelled" {% if status_filter == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-outline" style="padding: 0.75rem 1.25rem;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      Search
+    </button>
+
+    {% if search or status_filter %}
+    <a href="{{ url_for('list_appointments') }}" class="btn btn-outline" style="color: var(--slate-500);">
+      Clear Filter
+    </a>
+    {% endif %}
+  </form>
+
+  <!-- Appointments Table -->
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Patient</th>
+          <th>Doctor & Dept</th>
+          <th>Date & Time</th>
+          <th>Triage Priority</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if appointments %}
+          {% for app in appointments %}
+          <tr>
+            <td>
+              <a href="{{ url_for('view_pass', booking_ref=app.booking_ref) }}" style="font-weight: 700; font-family: monospace; color: var(--primary);">
+                {{ app.booking_ref }}
+              </a>
+            </td>
+            <td>
+              <strong style="color: var(--slate-900); display: block;">{{ app.patient_name }}</strong>
+              <span style="font-size: 0.8rem; color: var(--slate-500);">{{ app.patient_phone }}</span>
+            </td>
+            <td>
+              <strong style="color: var(--slate-800); display: block;">{{ app.doctor_name }}</strong>
+              <span style="font-size: 0.8rem; color: var(--primary);">{{ app.specialty }}</span>
+              <span style="font-size: 0.75rem; color: var(--slate-400); display: block;">{{ app.room_number }}</span>
+            </td>
+            <td>
+              <strong>{{ app.appointment_date }}</strong>
+              <span style="display: block; font-size: 0.82rem; color: var(--slate-600);">{{ app.time_slot }}</span>
+            </td>
+            <td>
+              <span class="badge {{ app.triage_badge }}">{{ app.triage_level }}</span>
+            </td>
+            <td>
+              <span class="badge badge-{{ app.status.lower() }}">{{ app.status }}</span>
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{{ url_for('view_pass', booking_ref=app.booking_ref) }}" class="btn btn-outline" style="padding: 0.4rem 0.75rem; font-size: 0.82rem; margin-right: 4px;" title="View Digital Pass">
+                Pass
+              </a>
+
+              {% if app.status == 'Confirmed' %}
+              <form action="{{ url_for('complete_appointment', app_id=app.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="btn btn-success" style="padding: 0.4rem 0.65rem; font-size: 0.82rem; margin-right: 4px;" title="Mark Completed">
+                  ✓
+                </button>
+              </form>
+
+              <form action="{{ url_for('cancel_appointment', app_id=app.id) }}" method="POST" onsubmit="return confirm('Cancel this appointment?');" style="display: inline;">
+                <button type="submit" class="btn btn-danger-outline" style="padding: 0.4rem 0.65rem; font-size: 0.82rem;" title="Cancel">
+                  ✕
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: var(--slate-400);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 0.75rem; display: block; opacity: 0.6;">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              No appointments found matching your criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
